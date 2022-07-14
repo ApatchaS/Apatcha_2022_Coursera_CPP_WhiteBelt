@@ -5,7 +5,6 @@
 #include <regex>
 #include <map>
 #include <set>
-#include <exception>
 
 using namespace std;
 
@@ -58,6 +57,24 @@ class	Date
 		int	day;
 };
 
+bool	operator< (const Date& LObj, const Date& RObj)
+{
+	if (LObj.GetYear() == RObj.GetYear() && LObj.GetMonth() == RObj.GetMonth())
+		return (LObj.GetDay() < RObj.GetDay());
+	if (LObj.GetYear() == RObj.GetYear())
+		return (LObj.GetMonth() < RObj.GetMonth());
+	return (LObj.GetYear() < RObj.GetYear());
+}
+
+ostream&	operator<< (ostream& stream, const Date& date)
+{
+	stream << setfill('0');
+	stream << setw(4) << date.GetYear() << '-'
+			<< setw(2) << date.GetMonth() << '-'
+			<< setw(2) << date.GetDay();
+	return (stream);
+}
+
 class	DataBase
 {
 	public:
@@ -95,71 +112,64 @@ class	DataBase
 		void	Print() const
 		{
 			for (const auto& date : tab)
-			{
 				for (const auto& event : date.second)
-				{
-					cout << setfill('0');
-					cout << setw(4) << date.first.GetYear() << '-'
-							<< setw(2) << date.first.GetMonth() << '-'
-							<< setw(2) << date.first.GetDay() << ' '
-							<< event << endl;
-				}
-			}
+					cout << date.first << ' ' << event << endl; 
 			return ;
 		}
 	private:
 		map<Date, set<string>>	tab;
 };
 
-bool	operator< (const Date& LObj, const Date& RObj)
-{
-	if (LObj.GetYear() == RObj.GetYear() && LObj.GetMonth() == RObj.GetMonth())
-		return (LObj.GetDay() < RObj.GetDay());
-	if (LObj.GetYear() == RObj.GetYear())
-		return (LObj.GetMonth() < RObj.GetMonth());
-	return (LObj.GetYear() < RObj.GetYear());
-}
-
-Date	ReadDate(istream& stream)
+Date	ReadDate(istringstream& stream)
 {
 	string	bufer;
 	stream >> bufer;
-	regex	rgx("^[-+]?[0-9]+[-][-+]?[0-9]+[-][-+]?[0-9]+$");
-	if (!regex_match(bufer, rgx))
-		throw runtime_error("Wrong date format: " + bufer);
-	stringstream	ss(bufer);
-	int	year, month, day;
+	istringstream	ss(bufer);
+	int year, month, day;
 	ss >> year;
+	if (ss.fail() || ss.peek() != '-')
+		throw runtime_error("Wrong date format: " + bufer);
 	ss.ignore(1);
+
 	ss >> month;
+	if (ss.fail() || ss.peek() != '-')
+		throw runtime_error("Wrong date format: " + bufer);
 	ss.ignore(1);
+
 	ss >> day;
+	if (ss.fail() || ss.peek() != EOF)
+		throw runtime_error("Wrong date format: " + bufer);
+
 	return (Date(Year(year), Month(month), Day(day)));
 }
 
 int	main(void)
 {
 	DataBase	database;
-	while (cin.peek() != EOF)
+	string		line;
+	while (getline(cin, line))
 	{
 		try
 		{
-			string	command;
-			cin >> command;
-			if (command == "Add")
+			istringstream	ss(line);
+			string	command = "\0";
+			ss >> command;
+			if (command == "\0")
+				continue;
+			else if (command == "Add")
 			{
-				Date date = ReadDate(cin);
-				string	event;
-				cin >> event;
+				Date date = ReadDate(ss);
+				string	event = "\0";
+				ss >> event;
 				database.AddEvent(date, event);
 			}
 			else if (command == "Del")
 			{
-				Date date = ReadDate(cin);
-				if (cin.peek() != '\n')
+				Date date = ReadDate(ss);
+				if (ss.peek() != -1)
 				{
-					string	event;
-					cin >> event;
+					string	event = "\0";
+					ss >> event;
 					bool res = database.DeleteEvent(date, event); 
 					if (res)
 						cout << "Deleted successfully\n";
@@ -174,7 +184,7 @@ int	main(void)
 			}
 			else if (command == "Find")
 			{
-				Date date = ReadDate(cin);
+				Date date = ReadDate(ss);
 				database.Find(date);
 			}
 			else if (command == "Print")

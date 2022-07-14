@@ -22,8 +22,12 @@ int main(void)
 	}
 	for (size_t iter = 0; iter < N; iter++)
 	{
-		for (const auto& cell : tab[iter])
-			cout << setw(10) << cell;
+		for (size_t jter = 0; jter < M; jter++)
+		{
+			cout << setw(10) << tab[iter][jter];
+			if (jter + 1 != M)
+				cout << ' ';
+		}
 		if (iter + 1 != N)
 			cout << endl;
 	}

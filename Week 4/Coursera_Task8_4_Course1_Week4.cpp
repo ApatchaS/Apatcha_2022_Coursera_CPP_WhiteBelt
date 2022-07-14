@@ -117,14 +117,13 @@ istream&	operator>> (istream& stream, Rational& rational)
 		return (stream);
 	int		numerator = 0, denominator = 0;
 	char	delim = '\0';
-	stream >> numerator;
-	stream >> delim;
-	stream >> denominator;
-	stream.ignore(1);
-	if (numerator == 0 || denominator == 0 || delim != '/')
-		rational = Rational();
-	else
-		rational = Rational(numerator, denominator);
+	if (stream >> numerator && stream >> delim && stream >> denominator)
+	{
+		if (delim == '/')
+			rational = Rational(numerator, denominator);
+		else
+			rational = Rational();
+	}
 	return (stream);
 }
 
